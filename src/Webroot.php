@@ -36,7 +36,7 @@ class Webroot extends FilesystemEntity {
 			// using the pipe redirect. This is due to problems with multiline quoted arguments
 			// (couldn't find out why it fails).
 			// Falling back to PHP api (but we have to use Windows dir format, so can't use SSPak::get_tmp_dir).
-			$remoteSniffer = sys_get_temp_dir() . '/' . 'sspak-sniffer-' . rand(100000,999999) . '.php';
+			$remoteSniffer = 'sspak-sniffer-' . rand(100000,999999) . '.php';
 			file_put_contents($remoteSniffer, $snifferFileContent);
 
 		} else {
