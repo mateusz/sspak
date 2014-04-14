@@ -28,11 +28,21 @@ class Webroot extends FilesystemEntity {
 
 		if(!$snifferFileContent) $snifferFileContent = file_get_contents(PACKAGE_ROOT . 'src/sspak-sniffer.php');
 
-		$remoteSniffer = SSPak::get_tmp_dir() . '/sspak-sniffer-' . rand(100000,999999) . '.php';
-		$this->uploadContent($snifferFileContent, $remoteSniffer);
 
-		$result = $this->execSudo(array('/usr/bin/env', 'php', $remoteSniffer, $this->path));
-		//$this->unlink($remoteSniffer);
+		$remoteSnifferFile = 'sspak-sniffer-' . rand(100000,999999) . '.php';
+
+		if (strtoupper(substr(PHP_OS, 0, 3)) === 'WIN') {
+			// This mess is because Windows doesn't support ssh, nor is it able to make the sniffer file
+			// using the pipe redirect. This is due to problems with multiline quoted arguments
+			// (couldn't find out why it fails).
+			// Falling back to PHP api (but we have to use Windows dir format, so can't use SSPak::get_tmp_dir).
+			file_put_contents(sys_get_temp_dir() . '/' . $remoteSnifferFile, $snifferFileContent);
+
+		} else {
+			$this->uploadContent($snifferFileContent, SSPak::get_tmp_dir() . '/' . $remoteSnifferFile);
+		}
+
+		$result = $this->execSudo(array('/usr/bin/env', 'php', SSPak::get_tmp_dir() . '/' . $remoteSnifferFile, $this->path));
 
 		$parsed = @unserialize($result['output']);
 		if(!$parsed) throw new Exception("Could not parse sspak-sniffer content:\n{$result['output']}\n");

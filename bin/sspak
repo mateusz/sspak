@@ -1,13 +1,6 @@
 #!/usr/bin/env php
 <?php
 
-$isBashy = `echo \$BASH`;
-if ($isBashy=='$BASH') {
-	echo "Your terminal seems not to be bash-like.\n";
-	echo "You need to be using bash (OSX, Linux) or msysgit (Windows).\n";
-	exit(10);
-}
-
 // Root from which to refer to src/
 if(!defined('PACKAGE_ROOT')) define('PACKAGE_ROOT', dirname(dirname(__FILE__)) . '/');
 
