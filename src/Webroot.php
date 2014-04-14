@@ -28,7 +28,7 @@ class Webroot extends FilesystemEntity {
 
 		if(!$snifferFileContent) $snifferFileContent = file_get_contents(PACKAGE_ROOT . 'src/sspak-sniffer.php');
 
-		$remoteSniffer = '/tmp/sspak-sniffer-' . rand(100000,999999) . '.php';
+		$remoteSniffer = sys_get_temp_dir() . '/sspak-sniffer-' . rand(100000,999999) . '.php';
 		$this->uploadContent($snifferFileContent, $remoteSniffer);
 
 		$result = $this->execSudo(array('/usr/bin/env', 'php', $remoteSniffer, $this->path));
@@ -48,7 +48,7 @@ class Webroot extends FilesystemEntity {
 			if(is_array($command)) $command = $this->executor->commandArrayToString($command);
 			// Try running sudo without asking for a password
 			try {
-				return $this->exec("sudo -n -u " . escapeshellarg($this->sudo) . " " . $command);
+				return $this->exec("sudo -n -u " . SSPak::escapeshellarg($this->sudo) . " " . $command);
 
 			// Otherwise capture SUDO password ourselves and pass it in through STDIN
 			} catch(Exception $e) {
@@ -56,7 +56,7 @@ class Webroot extends FilesystemEntity {
 				$stdin = fopen( 'php://stdin', 'r');
 				$password = fgets($stdin);
 
-				return $this->exec("sudo -S -p '' -u " . escapeshellarg($this->sudo) . " " . $command, array('inputContent' => $password));
+				return $this->exec("sudo -S -p '' -u " . SSPak::escapeshellarg($this->sudo) . " " . $command, array('inputContent' => $password));
 			}
 		
 		} else {
@@ -83,9 +83,9 @@ class Webroot extends FilesystemEntity {
 	}
 
 	function putdb_MySQLDatabase($conf, $sspak) {
-		$usernameArg = escapeshellarg("--user=".$conf['db_username']);
-		$passwordArg = escapeshellarg("--password=".$conf['db_password']);
-		$databaseArg = escapeshellarg($conf['db_database']);
+		$usernameArg = SSPak::escapeshellarg("--user=".$conf['db_username']);
+		$passwordArg = SSPak::escapeshellarg("--password=".$conf['db_password']);
+		$databaseArg = SSPak::escapeshellarg($conf['db_database']);
 
 		$hostArg = '';
 		$postArg = '';
@@ -93,10 +93,10 @@ class Webroot extends FilesystemEntity {
 			if (strpos($conf['db_server'], ':')!==false) {
 				// Handle "server:port" format.
 				$server = explode(':', $conf['db_server'], 2);
-				$hostArg = escapeshellarg("--host=".$server[0]);
-				$portArg = escapeshellarg("--port=".$server[1]);
+				$hostArg = SSPak::escapeshellarg("--host=".$server[0]);
+				$portArg = SSPak::escapeshellarg("--port=".$server[1]);
 			} else {
-				$hostArg = escapeshellarg("--host=".$conf['db_server']);
+				$hostArg = SSPak::escapeshellarg("--host=".$conf['db_server']);
 			}
 		}
 
@@ -109,10 +109,10 @@ class Webroot extends FilesystemEntity {
 	}
 
 	function putdb_PostgreSQLDatabase($conf, $sspak) {
-		$usernameArg = escapeshellarg("--username=".$conf['db_username']);
-		$passwordArg = "PGPASSWORD=".escapeshellarg($conf['db_password']);
-		$databaseArg = escapeshellarg($conf['db_database']);
-		$hostArg = escapeshellarg("--host=".$conf['db_server']);
+		$usernameArg = SSPak::escapeshellarg("--username=".$conf['db_username']);
+		$passwordArg = "PGPASSWORD=".SSPak::escapeshellarg($conf['db_password']);
+		$databaseArg = SSPak::escapeshellarg($conf['db_database']);
+		$hostArg = SSPak::escapeshellarg("--host=".$conf['db_server']);
 
 		// Create database if needed
 		$result = $this->exec("echo \"select count(*) from pg_catalog.pg_database where datname = $databaseArg\" | $passwordArg psql $usernameArg $hostArg $databaseArg -qt");
@@ -129,9 +129,9 @@ class Webroot extends FilesystemEntity {
 		$details = $this->details();
 		$assetsPath = $details['assets_path'];
 
-		$assetsParentArg = escapeshellarg(dirname($assetsPath));
-		$assetsBaseArg = escapeshellarg(basename($assetsPath));
-		$assetsBaseOldArg = escapeshellarg(basename($assetsPath).'.old');
+		$assetsParentArg = SSPak::escapeshellarg(dirname($assetsPath));
+		$assetsBaseArg = SSPak::escapeshellarg(basename($assetsPath));
+		$assetsBaseOldArg = SSPak::escapeshellarg(basename($assetsPath).'.old');
 
 		// Move existing assets to assets.old
 		$this->exec("if [ -d $assetsBaseArg ]; then mv $assetsBaseArg $assetsBaseOldArg; fi");
@@ -153,7 +153,7 @@ class Webroot extends FilesystemEntity {
 	 */
 	function putgit($details) {
 		$this->exec(array('git', 'clone', $details['remote'], $this->path));
-		$this->exec("cd $this->path && git checkout " . escapeshellarg($details['branch']));
+		$this->exec("cd $this->path && git checkout " . SSPak::escapeshellarg($details['branch']));
 		return true;
 	}
 }

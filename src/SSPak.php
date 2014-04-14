@@ -6,6 +6,14 @@
 class SSPak {
 	protected $executor;
 
+	static function escapeshellarg($string) {
+		if (strtoupper(substr(PHP_OS, 0, 3)) === 'WIN') {
+			return escapeshellarg(str_replace('"', '\"', $string));
+		} else {
+			return escapeshellarg($string);
+		}
+	}
+
 	/**
 	 * Create a new handler
 	 * @param Executor $executor The Executor object to handle command execution
@@ -94,14 +102,14 @@ class SSPak {
 		$filesystem = new FilesystemEntity(null, $executor);
 
 		if($pakParts['db']) {
-			$dbPath = escapeshellarg($namedArgs['db']);
+			$dbPath = SSPak::escapeshellarg($namedArgs['db']);
 			$process = $filesystem->createProcess("cat $dbPath | gzip -c");
 			$sspak->writeFileFromProcess('database.sql.gz', $process);
 		}
 
 		if($pakParts['assets']) {
-			$assetsParentArg = escapeshellarg(dirname($namedArgs['assets']));
-			$assetsBaseArg = escapeshellarg(basename($namedArgs['assets']));
+			$assetsParentArg = SSPak::escapeshellarg(dirname($namedArgs['assets']));
+			$assetsBaseArg = SSPak::escapeshellarg(basename($namedArgs['assets']));
 			$process = $filesystem->createProcess("cd $assetsParentArg && tar cfh - $assetsBaseArg | gzip -c");
 			$sspak->writeFileFromProcess('assets.tar.gz', $process);
 		}
@@ -155,7 +163,7 @@ class SSPak {
 		$details = $webroot->sniff();
 
 		// Create a build folder for the sspak file
-		$buildFolder = "/tmp/sspak-" . rand(100000,999999);
+		$buildFolder = sys_get_temp_dir() . "/sspak-" . rand(100000,999999);
 		$webroot->exec(array('mkdir', $buildFolder));
 
 		$dbFile = "$buildFolder/database.sql.gz";
@@ -190,9 +198,9 @@ class SSPak {
 	}
 
 	function getdb_MySQLDatabase($webroot, $conf, $sspak, $filename) {
-		$usernameArg = escapeshellarg("--user=".$conf['db_username']);
-		$passwordArg = escapeshellarg("--password=".$conf['db_password']);
-		$databaseArg = escapeshellarg($conf['db_database']);
+		$usernameArg = SSPak::escapeshellarg("--user=".$conf['db_username']);
+		$passwordArg = SSPak::escapeshellarg("--password=".$conf['db_password']);
+		$databaseArg = SSPak::escapeshellarg($conf['db_database']);
 
 		$hostArg = '';
 		$postArg = '';
@@ -200,14 +208,14 @@ class SSPak {
 			if (strpos($conf['db_server'], ':')!==false) {
 				// Handle "server:port" format.
 				$server = explode(':', $conf['db_server'], 2);
-				$hostArg = escapeshellarg("--host=".$server[0]);
-				$portArg = escapeshellarg("--port=".$server[1]);
+				$hostArg = SSPak::escapeshellarg("--host=".$server[0]);
+				$portArg = SSPak::escapeshellarg("--port=".$server[1]);
 			} else {
-				$hostArg = escapeshellarg("--host=".$conf['db_server']);
+				$hostArg = SSPak::escapeshellarg("--host=".$conf['db_server']);
 			}
 		}
 
-		$filenameArg = escapeshellarg($filename);
+		$filenameArg = SSPak::escapeshellarg($filename);
 
 		$process = $webroot->createProcess("mysqldump --skip-opt --add-drop-table --extended-insert --create-options --quick  --set-charset --default-character-set=utf8 $usernameArg $passwordArg $hostArg $portArg $databaseArg | gzip -c");
 		$sspak->writeFileFromProcess($filename, $process);
@@ -215,11 +223,11 @@ class SSPak {
 	}
 
 	function getdb_PostgreSQLDatabase($webroot, $conf, $sspak, $filename) {
-		$usernameArg = escapeshellarg("--username=".$conf['db_username']);
-		$passwordArg = "PGPASSWORD=".escapeshellarg($conf['db_password']);
-		$databaseArg = escapeshellarg($conf['db_database']);
-		$hostArg = escapeshellarg("--host=".$conf['db_server']);
-		$filenameArg = escapeshellarg($filename);
+		$usernameArg = SSPak::escapeshellarg("--username=".$conf['db_username']);
+		$passwordArg = "PGPASSWORD=".SSPak::escapeshellarg($conf['db_password']);
+		$databaseArg = SSPak::escapeshellarg($conf['db_database']);
+		$hostArg = SSPak::escapeshellarg("--host=".$conf['db_server']);
+		$filenameArg = SSPak::escapeshellarg($filename);
 
 		$process = $webroot->createProcess("$passwordArg pg_dump --clean --no-owner --no-tablespaces $usernameArg $hostArg $databaseArg | gzip -c");
 		$sspak->writeFileFromProcess($filename, $process);
@@ -227,8 +235,8 @@ class SSPak {
 	}
 
 	function getassets($webroot, $assetsPath, $sspak, $filename) {
-		$assetsParentArg = escapeshellarg(dirname($assetsPath));
-		$assetsBaseArg = escapeshellarg(basename($assetsPath));
+		$assetsParentArg = SSPak::escapeshellarg(dirname($assetsPath));
+		$assetsBaseArg = SSPak::escapeshellarg(basename($assetsPath));
 
 		$process = $webroot->createProcess("cd $assetsParentArg && tar cfh - $assetsBaseArg | gzip -c");
 		$sspak->writeFileFromProcess($filename, $process);

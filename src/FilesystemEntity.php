@@ -69,7 +69,7 @@ class FilesystemEntity {
 	 * @param string $dest The remote filename/dir to upload to
 	 */
 	function uploadContent($content, $dest) {
-		$this->exec("echo " . escapeshellarg($content) . " > " . escapeshellarg($dest));
+		$this->exec("echo " . SSPak::escapeshellarg($content) . " > " . SSPak::escapeshellarg($dest));
 	}
 
 	/**
@@ -95,7 +95,7 @@ class FilesystemEntity {
 		if($file == '@self') return true;
 
 		if($this->server) {
-			$result = $this->exec("if [ -e " . escapeshellarg($file) . " ]; then echo yes; fi");
+			$result = $this->exec("if [ -e " . SSPak::escapeshellarg($file) . " ]; then echo yes; fi");
 			return (trim($result['output']) == 'yes');
 
 		} else {
@@ -108,7 +108,7 @@ class FilesystemEntity {
 	 */
 	function writeFile($file, $content) {
 		if($this->server) {
-			$this->exec("echo " . escapeshellarg($content) . " > " . escapeshellarg($file));
+			$this->exec("echo " . SSPak::escapeshellarg($content) . " > " . SSPak::escapeshellarg($file));
 
 		} else {
 			file_put_contents($file, $content);

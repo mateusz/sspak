@@ -54,7 +54,7 @@ class Executor {
 	function commandArrayToString($command) {
 		$string = escapeshellcmd(array_shift($command));
 		foreach($command as $arg) {
-			$string .= ' ' . escapeshellarg($arg);
+			$string .= ' ' . SSPak::escapeshellarg($arg);
 		}
 		return $string;
 	}
@@ -83,7 +83,7 @@ class Process {
 		if($this->remoteServer) {
 			if(!empty($options['outputFile']) || !empty($options['outputStream'])) $ssh = "ssh -T ";
 			else $ssh = "ssh -t ";
-			$command = $ssh . escapeshellarg($this->remoteServer) . ' ' . escapeshellarg($this->command);
+			$command = $ssh . SSPak::escapeshellarg($this->remoteServer) . ' ' . SSPak::escapeshellarg($this->command);
 		} else {
 			$command = $this->command;
 		}
