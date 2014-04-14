@@ -8,9 +8,20 @@ class SSPak {
 
 	static function escapeshellarg($string) {
 		if (strtoupper(substr(PHP_OS, 0, 3)) === 'WIN') {
-			return escapeshellarg(str_replace('"', '\"', $string));
+			// escapeshellarg will simply blow away all double quotes. That doesn't help.
+			if (strpos('"', $string)!==false) user_error('Windows version of escapeshellarg wipes out double quotes. Use single quotes instead.');
+			return escapeshellarg($string);
 		} else {
 			return escapeshellarg($string);
+		}
+	}
+
+	static function get_tmp_dir() {
+		if (strtoupper(substr(PHP_OS, 0, 3)) === 'WIN') {
+			// We are using git bash. Make sure we swap backslashes into slashes.
+			return str_replace('/', '\\', sys_get_temp_dir());
+		} else {
+			return sys_get_temp_dir();
 		}
 	}
 
@@ -163,7 +174,7 @@ class SSPak {
 		$details = $webroot->sniff();
 
 		// Create a build folder for the sspak file
-		$buildFolder = sys_get_temp_dir() . "/sspak-" . rand(100000,999999);
+		$buildFolder = SSPak::get_tmp_dir() . "/sspak-" . rand(100000,999999);
 		$webroot->exec(array('mkdir', $buildFolder));
 
 		$dbFile = "$buildFolder/database.sql.gz";

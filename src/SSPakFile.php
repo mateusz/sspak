@@ -87,7 +87,7 @@ STUB;
 		// This means that we need to create a temp file, which is a pain, if that file happens to be a 3GB
 		// asset dump. :-/
 		if($this->phar instanceof PharData) {
-			$tmpFile = sys_get_temp_dir() . '/sspak-content-' .rand(100000,999999);
+			$tmpFile = SSPak::get_tmp_dir() . '/sspak-content-' .rand(100000,999999);
 			$process->exec(array('outputFile' => $tmpFile));
 			$this->phar->addFile($tmpFile, $filename);
 			unlink($tmpFile);

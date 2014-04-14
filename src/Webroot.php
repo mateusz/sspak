@@ -28,7 +28,7 @@ class Webroot extends FilesystemEntity {
 
 		if(!$snifferFileContent) $snifferFileContent = file_get_contents(PACKAGE_ROOT . 'src/sspak-sniffer.php');
 
-		$remoteSniffer = sys_get_temp_dir() . '/sspak-sniffer-' . rand(100000,999999) . '.php';
+		$remoteSniffer = SSPak::get_tmp_dir() . '/sspak-sniffer-' . rand(100000,999999) . '.php';
 		$this->uploadContent($snifferFileContent, $remoteSniffer);
 
 		$result = $this->execSudo(array('/usr/bin/env', 'php', $remoteSniffer, $this->path));
