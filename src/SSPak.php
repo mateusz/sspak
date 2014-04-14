@@ -18,10 +18,10 @@ class SSPak {
 
 	static function get_tmp_dir() {
 		if (strtoupper(substr(PHP_OS, 0, 3)) === 'WIN') {
-			// We are using git bash. Make sure we swap backslashes into slashes.
-			$slashes = str_replace('\\', '/', sys_get_temp_dir());
-			$drive = str_replace(':/', '/', $slashes);
-			return '/' . $drive;
+			// We are on Windows and using msysgit. Use a directory that works both with:
+			// * PHP calls (requires windows format)
+			// * exec calls (requires pseudo-bash format)
+			return '.';
 		} else {
 			return sys_get_temp_dir();
 		}
