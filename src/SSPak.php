@@ -206,7 +206,8 @@ class SSPak {
 
 		// Save git-remote
 		if($pakParts['git-remote']) {
-			$this->getgitremote($webroot, $sspak, basename($gitRemoteFile));
+			// Broken on Windows
+			//$this->getgitremote($webroot, $sspak, basename($gitRemoteFile));
 		}
 
 		// Remove the build folder
@@ -219,7 +220,7 @@ class SSPak {
 		$databaseArg = SSPak::escapeshellarg($conf['db_database']);
 
 		$hostArg = '';
-		$postArg = '';
+		$portArg = '';
 		if (!empty($conf['db_server']) && $conf['db_server'] != 'localhost') {
 			if (strpos($conf['db_server'], ':')!==false) {
 				// Handle "server:port" format.
