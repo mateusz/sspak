@@ -1,6 +1,6 @@
 <?php
 
-class SSPakFile extends FilesystemEntity {
+class SSPakTarFile extends FilesystemEntity {
 
 	protected $phar;
 	protected $pharAlias;
@@ -9,70 +9,22 @@ class SSPakFile extends FilesystemEntity {
 	function __construct($path, $executor, $pharAlias = 'sspak.phar') {
 		parent::__construct($path, $executor);
 		if(!$this->isLocal()) throw new LogicException("Can't manipulate remote .sspak.phar files, only remote webroots.");
-		if(substr($path,-5) === '.phar') {
-			throw new LogicException("Can't manipulate non-phar files with SSPakFile");
+		if(substr($path,-5) !== '.phar') {
+			throw new LogicException("Can't manipulate phar files with SSPakTarFile");
 		}
 
 		$this->pharAlias = $pharAlias;
 		$this->pharPath = $path;
 
-		$this->phar = new Phar(
+		$this->phar = new PharData(
 			$path,
 			FilesystemIterator::CURRENT_AS_FILEINFO | FilesystemIterator::KEY_AS_FILENAME,
 			$this->pharAlias
 		);
-		if(!file_exists($this->path)) $this->makeExecutable();
 	}
 
 	function getPhar() {
 		return $this->phar;
-	}
-
-	/**
-	 * Add the SSPak executable information into this SSPak file
-	 */
-	function makeExecutable() {
-		if(ini_get('phar.readonly')) {
-			throw new Exception("Please set phar.readonly to false in your php.ini.");
-		}
-
-		passthru("composer install -d " . escapeshellarg(PACKAGE_ROOT) . " --no-dev");
-
-		$root = PACKAGE_ROOT;
-		$srcRoots = [
-			'src/',
-			'vendor/',
-		];
-
-		// Add the bin file, but strip of the #! exec header.
-		$this->phar['bin/sspak'] = preg_replace("/^#!\/usr\/bin\/env php\n/", '', file_get_contents($root . "bin/sspak"));
-
-		foreach($srcRoots as $srcRoot) {
-			foreach(new RecursiveIteratorIterator(new RecursiveDirectoryIterator($root . $srcRoot)) as $fileObj) {
-				if($fileObj->isFile()) {
-					$file = $fileObj->getRealPath();
-
-					$relativeFile = str_replace($root, '', $file);
-
-					echo "Adding $relativeFile\n";
-					$this->phar[$relativeFile] = file_get_contents($file);
-				}
-			}
-		}
-
-		$stub = <<<STUB
-#!/usr/bin/env php
-<?php
-define('PACKAGE_ROOT', 'phar://$this->pharAlias/');
-Phar::mapPhar('$this->pharAlias');
-require 'phar://$this->pharAlias/bin/sspak';
-__HALT_COMPILER();
-STUB;
-
-		$this->phar->setStub($stub);
-		chmod($this->path, 0775);
-
-		passthru("composer install -d " . escapeshellarg(PACKAGE_ROOT));
 	}
 
 	/**
@@ -101,27 +53,10 @@ STUB;
 		// Non-executable Phars can't have content streamed into them
 		// This means that we need to create a temp file, which is a pain, if that file happens to be a 3GB
 		// asset dump. :-/
-		if($this->phar instanceof PharData) {
-			$tmpFile = '/tmp/sspak-content-' .rand(100000,999999);
-			$process->exec(array('outputFile' => $tmpFile));
-			$this->phar->addFile($tmpFile, $filename);
-			unlink($tmpFile);
-
-		// So, where we *can* use write streams, we do so.
-		} else {
-			$stream = $this->writeStreamForFile($filename);
-			$process->exec(array('outputStream' => $stream));
-			fclose($stream);
-		}
-	}
-
-	/**
-	 * Return a writeable stream corresponding to the given file within the .sspak
-	 * @param  string $filename The name of the file within the .sspak
-	 * @return Stream context
-	 */
-	function writeStreamForFile($filename) {
-		return fopen('phar://' . $this->pharAlias . '/' . $filename, 'w');
+		$tmpFile = '/tmp/sspak-content-' .rand(100000,999999);
+		$process->exec(array('outputFile' => $tmpFile));
+		$this->phar->addFile($tmpFile, $filename);
+		unlink($tmpFile);
 	}
 
 	/**
@@ -163,3 +98,4 @@ STUB;
 		return $details;
 	}
 }
+
